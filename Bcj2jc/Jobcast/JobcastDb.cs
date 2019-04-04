@@ -1,5 +1,10 @@
-﻿using System;
+﻿using Dapper;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,29 +14,59 @@ namespace Bcj2jc.Jobcast
     {
         public JobcastDb(string connectionString)
         {
-            ConnectionString = connectionString;
+            Connection = new SqlConnection(connectionString);
+            Companies = new TableLookup(Connection, "Koopla.Companies");
+            Categories = new TableLookup(Connection, "Koopla.JobCategories");
+            Provinces = new TableLookup(Connection, "Koopla.Provinces");
+            Countries = new TableLookup(Connection, "Koopla.Countries");
         }
 
-        string ConnectionString { get; }
+        IDbConnection Connection { get; }
+        TableLookup Companies { get; }
+        TableLookup Categories { get; }
+        TableLookup Provinces { get; }
+        TableLookup Countries { get; }
 
-        public Task<HashSet<long>> IdsAsync(string source)
+        public async Task<IEnumerable<long>> IdsAsync(string source) =>
+            await Connection.QueryAsync<long>("SELECT ReferenceId FROM Koopla.Jobs");
+
+        public async Task InsertAsync(Job item)
         {
-            throw new NotImplementedException();
+            await Connection.ExecuteAsync(
+                "INSERT INTO Koopla.Jobs (ReferenceId, PublishDate, Name, Description, Company, City, Province, Country) " + 
+                "VALUES (@ReferenceId, @PublishDate, @Name, @Description, @Company, @City, @Province, @Country)",
+                new
+                {
+                    ReferenceId = item.Id,
+                    PublishDate = item.Date,
+                    Name = item.Title,
+                    Description = item.Description,
+                    Company = await Companies.GetOrAddAsync(item.Company),
+                    City = item.City,
+                    Province = await Provinces.GetAsync(item.State),
+                    Country = await Countries.GetAsync(item.Country)
+                });
+
+            var id = await Connection.ExecuteScalarAsync<int>(
+                "SELECT Id FROM Koopla.Jobs WHERE ReferenceId = @ReferenceId",
+                new { ReferenceId = item.Id });
+
+            await Task.WhenAll(
+                from category in await Categories.GetOrAddAsync(item.Categories)
+                select Connection.ExecuteAsync(
+                    "INSERT INTO Koopla.Jobs_JobCategories (JobId, JobCategoryId) VALUES (@JobId, @JobCategoryId)",
+                    new { JobId = id, JobCategoryId = category }));
         }
 
-        public Task InsertAsync(Job item)
+        public async Task UpdateAsync(Job item)
         {
-            throw new NotImplementedException();
+            
+
         }
 
-        public Task RemoveAsync(long id)
+        public async Task RemoveAsync(long id)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task UpdateAsync(Job item)
-        {
-            throw new NotImplementedException();
-        }
+            
+        }        
     }
 }

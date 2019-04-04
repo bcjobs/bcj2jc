@@ -14,11 +14,11 @@ namespace Bcj2jc
             AsyncContext.Run(() => 
                 MainAsync(
                     new BCJobsFeed("https://www.bcjobs.ca/rss/jobs.xml?source=Jobcast&medium=referral&campaign=SearchEngines"),
-                    new JobcastDb("TBD")));
+                    new JobcastDb("Data Source=DIMA-WS;Integrated Security=True;Database=JobcastDev")));
 
         static async Task MainAsync(IJobFeed feed, IJobDb db)
         {
-            var dbIds = await db.IdsAsync(feed.Source);
+            var dbIds = new HashSet<long>(await db.IdsAsync(feed.Source));
             var jobs = feed.ToArray();
             foreach (var job in jobs)
                 if (!job.DaysOlder(7))
