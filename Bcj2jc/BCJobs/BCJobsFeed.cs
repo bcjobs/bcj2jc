@@ -31,7 +31,7 @@ namespace Bcj2jc.BCJobs
             try
             {
                 return new Job(
-                    id: long.Parse(item.Element("referencenumber").Value.Split('-')[1]),
+                    id: long.Parse(item.Element("referencenumber").Value.Split('-').Last()),
                     source: Source,
                     referenceNumber: item.Element("referencenumber").Value,
                     date: DateTime.ParseExact(item.Element("date").Value, "ddd, dd MMM yyyy h:mm:ss tt PDT", null),
