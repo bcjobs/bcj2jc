@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Bcj2jc
 {
@@ -6,7 +8,8 @@ namespace Bcj2jc
     {
         public FeedItem(string source, string referenceNumber, 
             string title, DateTime date, string url, string company, 
-            string city, string state, string country, string description)
+            string city, string state, string country, string description,
+            IEnumerable<string> categories)
         {
             Id = new FeedItemId(source, referenceNumber);
             Title = title;
@@ -17,6 +20,7 @@ namespace Bcj2jc
             State = state;
             Country = country;
             Description = description;
+            Categories = categories.ToArray();
         }
 
         public FeedItemId Id { get; }
@@ -28,6 +32,7 @@ namespace Bcj2jc
         public string State { get; }
         public string Country { get; }
         public string Description { get; }
+        public IReadOnlyList<string> Categories { get; }
 
         public override string ToString() => Title;
     }

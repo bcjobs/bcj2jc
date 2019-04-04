@@ -42,7 +42,9 @@ namespace Bcj2jc
                     city: item.Element("city").Value,
                     state: item.Element("state").Value,
                     country: item.Element("country").Value,
-                    description: item.Element("description").Value);
+                    description: item.Element("description").Value,
+                    categories: from c in item.Element("categories").Value.Split(',')
+                                select c.Trim());
             }
             catch(Exception ex)
             {
