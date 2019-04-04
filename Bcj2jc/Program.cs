@@ -21,11 +21,10 @@ namespace Bcj2jc
             var dbIds = await db.IdsAsync(feed.Source);
             var jobs = feed.ToArray();
             foreach (var job in jobs)
-                if (!job.DaysOlder(7))
-                    if (dbIds.Contains(job.Id))
-                        await db.UpdateAsync(job);
-                    else
-                        await db.InsertAsync(job);
+                if (!dbIds.Contains(job.Id))
+                    await db.InsertAsync(job);
+                else if (!job.DaysOlder(7))
+                    await db.UpdateAsync(job);                      
 
             var jobIds = new HashSet<long>(from j in jobs select j.Id);
             foreach (var id in dbIds)
