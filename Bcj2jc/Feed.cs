@@ -43,7 +43,7 @@ namespace Bcj2jc
                     state: item.Element("state").Value,
                     country: item.Element("country").Value,
                     description: item.Element("description").Value,
-                    categories: from c in item.Element("categories").Value.Split(',')
+                    categories: from c in item.Element("category").Value.Split(',')
                                 select c.Trim());
             }
             catch(Exception ex)
