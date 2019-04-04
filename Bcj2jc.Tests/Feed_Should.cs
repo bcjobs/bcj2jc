@@ -1,3 +1,4 @@
+using Bcj2jc.BCJobs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
@@ -16,7 +17,7 @@ namespace Bcj2jc.Tests
         public void Parse()
         {
             var feed = new BCJobsFeed(FeedPath)
-                .ToDictionary();
+                .ToDictionary(j => j.Id);
 
             var id = 4263L;
             var item = feed[id];

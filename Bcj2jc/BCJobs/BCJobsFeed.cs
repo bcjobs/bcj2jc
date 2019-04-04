@@ -7,34 +7,32 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
-namespace Bcj2jc
+namespace Bcj2jc.BCJobs
 {
-    public class BCJobsFeed : Enumerable<FeedItem>
+    public class BCJobsFeed : Enumerable<Job>, IJobFeed
     {
-        public BCJobsFeed(string url = "https://www.bcjobs.ca/rss/jobs.xml?source=Jobcast&medium=referral&campaign=SearchEngines")
+        public BCJobsFeed(string url)
         {
             Url = url;
         }
 
         string Url { get; }
-
-        public Dictionary<long, FeedItem> ToDictionary() =>
-            this.ToDictionary(i => i.Id);
-
-        public override IEnumerator<FeedItem> GetEnumerator() =>
+        public string Source => "BCJobs";
+                
+        public override IEnumerator<Job> GetEnumerator() =>
             XDocument.Load(Url)
                 .XPathSelectElements("//source/job")
                 .Select(Parse)
                 .Where(i => i != null)
                 .GetEnumerator();
 
-        FeedItem Parse(XElement item)
+        Job Parse(XElement item)
         {
             try
             {
-                return new FeedItem(
+                return new Job(
                     id: long.Parse(item.Element("referencenumber").Value.Split('-')[1]),
-                    source: "BCJobs",
+                    source: Source,
                     referenceNumber: item.Element("referencenumber").Value,
                     date: DateTime.ParseExact(item.Element("date").Value, "ddd, dd MMM yyyy h:mm:ss tt PDT", null),
                     title: item.Element("title").Value,

@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Bcj2jc
 {
-    public class FeedItem
+    public class Job
     {
-        public FeedItem(long id, string source, string referenceNumber, 
+        public Job(long id, string source, string referenceNumber, 
             string title, DateTime date, string url, string company, 
             string city, string state, string country, string description,
             IEnumerable<string> categories)
@@ -37,6 +37,7 @@ namespace Bcj2jc
         public string Country { get; }
         public string Description { get; }
         public IReadOnlyList<string> Categories { get; }
+        public bool DaysOlder(int days) => Date.AddDays(days) < DateTime.Now; 
 
         public override string ToString() => Title;
     }
