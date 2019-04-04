@@ -6,12 +6,14 @@ namespace Bcj2jc
 {
     public class FeedItem
     {
-        public FeedItem(string source, string referenceNumber, 
+        public FeedItem(long id, string source, string referenceNumber, 
             string title, DateTime date, string url, string company, 
             string city, string state, string country, string description,
             IEnumerable<string> categories)
         {
-            Id = new FeedItemId(source, referenceNumber);
+            Id = id;
+            Source = source;
+            ReferenceNumber = referenceNumber;
             Title = title;
             Date = date;
             Url = url;
@@ -23,7 +25,9 @@ namespace Bcj2jc
             Categories = categories.ToArray();
         }
 
-        public FeedItemId Id { get; }
+        public long Id { get; }
+        public string Source { get; }
+        public string ReferenceNumber { get; }
         public string Title { get; }
         public DateTime Date { get; }
         public string Url { get; }

@@ -9,16 +9,16 @@ using System.Xml.XPath;
 
 namespace Bcj2jc
 {
-    public class Feed : Enumerable<FeedItem>
+    public class BCJobsFeed : Enumerable<FeedItem>
     {
-        public Feed(string url = "https://www.bcjobs.ca/rss/jobs.xml?source=Jobcast&medium=referral&campaign=SearchEngines")
+        public BCJobsFeed(string url = "https://www.bcjobs.ca/rss/jobs.xml?source=Jobcast&medium=referral&campaign=SearchEngines")
         {
             Url = url;
         }
 
         string Url { get; }
 
-        public Dictionary<FeedItemId, FeedItem> ToDictionary() =>
+        public Dictionary<long, FeedItem> ToDictionary() =>
             this.ToDictionary(i => i.Id);
 
         public override IEnumerator<FeedItem> GetEnumerator() =>
@@ -33,7 +33,8 @@ namespace Bcj2jc
             try
             {
                 return new FeedItem(
-                    source: item.Element("source").Value,
+                    id: long.Parse(item.Element("referencenumber").Value.Split('-')[1]),
+                    source: "BCJobs",
                     referenceNumber: item.Element("referencenumber").Value,
                     date: DateTime.ParseExact(item.Element("date").Value, "ddd, dd MMM yyyy h:mm:ss tt PDT", null),
                     title: item.Element("title").Value,
