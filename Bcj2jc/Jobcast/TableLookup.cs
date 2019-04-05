@@ -23,23 +23,25 @@ namespace Bcj2jc.Jobcast
             await Task.WhenAll(from name in names
                                select GetOrAddAsync(name));
 
-        public async Task<int> GetOrAddAsync(string name)
-        {
-            var id = await GetAsync(name);
-            if (id != 0)
-                return id;
+        public async Task<int> GetOrAddAsync(string name, string insert = null, string select = null) =>
+            await Ids.GetOrAdd(name, async n =>
+            {
+                var id = await GetAsync(name, select);
+                if (id != 0)
+                    return id;
 
-            await Connection.ExecuteAsync($"INSERT INTO {Table} (Name) VALUES (@Name)", new { Name = name });
-            return await GetAsync(name);
-        }
+                await Connection.ExecuteAsync(insert ?? $"INSERT INTO {Table} (Name) VALUES (@Name)", new { Name = name });
+                return await GetAsync(name, select);
+            });
 
         public async Task<int[]> GetAsync(IEnumerable<string> names) =>
             await Task.WhenAll(from name in names
                                select GetAsync(name));
 
-        public async Task<int> GetAsync(string name) =>
-            await Connection.QuerySingleOrDefaultAsync<int>(
-                $"SELECT Id FROM {Table} IN @Name",
-                new { Name = name });
+        public async Task<int> GetAsync(string name, string select = null) =>
+            await Ids.GetOrAdd(name, async n =>
+                await Connection.QuerySingleOrDefaultAsync<int>(
+                    select ?? $"SELECT Id FROM {Table} IN @Name",
+                    new { Name = name }));
     }
 }
