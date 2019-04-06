@@ -7,9 +7,9 @@ namespace Bcj2jc
 {
     public interface IJobDb
     {
-        Task<HashSet<long>> IdsAsync(string source);
+        Task<IEnumerable<long>> IdsAsync(string source);
+        Task RemoveAsync(string source, long id);
         Task InsertAsync(Job item);
         Task UpdateAsync(Job item);
-        Task RemoveAsync(long id);
     }
 }
