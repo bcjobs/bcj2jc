@@ -32,18 +32,18 @@ namespace Bcj2jc.Jobcast
 
         public async Task RemoveAsync(string source, long id) =>
             await Connection.ExecuteAsync(
-                "UPDATE Koopla.Jobs SET StatusId = 4, DeletedDate = GetDate() WHERE Source = @Source AND ReferenceId = @ReferenceId", new { Source = source, ReferenceId = $"{id}" });
+                "UPDATE Koopla.Jobs SET StatusId = 4, DeletedDate = GetUtcDate() WHERE Source = @Source AND ReferenceId = @ReferenceId", new { Source = source, ReferenceId = $"{id}" });
         
         public async Task InsertAsync(Job item)
         {
-            var companyId = await CompanyAsync(item.Company);
-            var provinceId = await Provinces.GetOrNullAsync(item.State);
-            var countryId = await Countries.GetOrNullAsync(item.Country);
+            var companyId = await CompanyAsync(item.Source, item.Company);
+            var provinceId = await ProvinceAsync(item.State);
+            var countryId = await CountryAsync(item.Country);
 
             await Connection.ExecuteAsync(
-                "INSERT INTO Koopla.Jobs (ReferenceId, Source, StatusId, CreatedDate, ModifiedDate, PublishDate, Name, Description, CompanyId, City, " + 
-                "ProvinceId, CountryId, ApplicantRoutingTypeId, DescriptionFormat) " +
-                "VALUES (@ReferenceId, @Source, 1, GetDate(), GetDate(), @PublishDate, @Name, @Description, @CompanyId, @City, @ProvinceId, @CountryId, 2, 'html')",
+                "INSERT INTO Koopla.Jobs (ReferenceId, Source, StatusId, CreatedDate, ModifiedDate, PublishDate, Name, Description, CompanyId, City, " +
+                "ProvinceId, CountryId, ApplicantRoutingTypeId, DescriptionFormat, ApplicationUrl) " +
+                "VALUES (@ReferenceId, @Source, 1, GetUtcDate(), GetUtcDate(), @PublishDate, @Name, @Description, @CompanyId, @City, @ProvinceId, @CountryId, 2, 'html', @ApplicationUrl)",
                 new
                 {
                     ReferenceId = $"{item.Id}",
@@ -54,7 +54,8 @@ namespace Bcj2jc.Jobcast
                     CompanyId = companyId,
                     City = item.City,
                     ProvinceId = provinceId,
-                    CountryId = countryId                    
+                    CountryId = countryId,
+                    ApplicationUrl = item.Url
                 });
 
             var id = await Connection.ExecuteScalarAsync<int>(
@@ -69,13 +70,13 @@ namespace Bcj2jc.Jobcast
 
         public async Task UpdateAsync(Job item)
         {
-            var companyId = await CompanyAsync(item.Company);
-            var provinceId = await Provinces.GetOrNullAsync(item.State);
-            var countryId = await Countries.GetOrNullAsync(item.Country);
+            var companyId = await CompanyAsync(item.Source, item.Company);
+            var provinceId = await ProvinceAsync(item.State);
+            var countryId = await CountryAsync(item.Country);
 
             await Connection.ExecuteAsync(
                 "UPDATE Koopla.Jobs SET " +
-                "ModifiedDate = GetDate(), StatusId = 1, DeletedDate=NULL, PublishDate = @PublishDate, Name = @Name, " + 
+                "ModifiedDate = GetUtcDate(), StatusId = 1, DeletedDate=NULL, PublishDate = @PublishDate, Name = @Name, " + 
                 "Description = @Description, CompanyId = @CompanyId, City = @City, ProvinceId = @ProvinceId, CountryId = @CountryId " +
                 "WHERE Source = @Source AND ReferenceId = @ReferenceId",
                 new
@@ -102,12 +103,27 @@ namespace Bcj2jc.Jobcast
                     new { JobId = id, JobCategoryId = categoryId });
         }
 
-        async Task<int> CompanyAsync(string name) =>
+        async Task<int> CompanyAsync(string source, string name) =>
             await Companies.GetOrAddAsync(
                 name,
                 "INSERT INTO Koopla.Companies " +
-                "(Name, CreatedDate, ModifiedDate, CompanyStatusId, SearchEnginesEnabled, LCID, TaxExempt, ShowPageFooter, RequiresResume, UnlimitedJobOverride, RouteSharesToApplicationUrl) " +
-                $"VALUES (@Name, GetDate(), GetDate(), 1, 0, 9, 0, 1, 1, 1, 0)");
+                "(Source, Name, CreatedDate, ModifiedDate, CompanyStatusId, SearchEnginesEnabled, LCID, TaxExempt, ShowPageFooter, RequiresResume, UnlimitedJobOverride, RouteSharesToApplicationUrl) " +
+                $"VALUES ('{source}', @Name, GetUtcDate(), GetUtcDate(), 1, 0, 9, 0, 1, 1, 1, 0)",
+                "SELECT Id FROM Koopla.Companies " +
+                $"WHERE Name = @Name AND Source = '{source}'");
+
+        async Task<int?> ProvinceAsync(string name) =>
+            await Provinces.GetOrNullAsync(
+                name,
+                "SELECT p.Id FROM Koopla.Provinces AS p " +
+                "INNER JOIN Koopla.Countries AS c ON c.Id = p.CountryId " +
+                "WHERE p.AlphaCode = @Name AND c.Name = 'Canada'");
+
+        async Task<int?> CountryAsync(string name) =>
+            await Countries.GetOrNullAsync(
+                name,
+                "SELECT Id FROM Koopla.Countries " +
+                "WHERE Alpha2_ISO3166_1 = @Name");
 
         async Task<int[]> CategoryAsync(int companyId, IEnumerable<string> names) =>
             await Categories.GetOrAddAsync(
